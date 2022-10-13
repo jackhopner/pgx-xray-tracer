@@ -12,30 +12,57 @@ type segmentContextKey string
 
 const xraySegmentKey segmentContextKey = "xray_segment"
 
+type TraceType string
+
+const (
+	BatchTraceType    TraceType = "batch"
+	ConnectTraceType  TraceType = "connect"
+	CopyFromTraceType TraceType = "copy_from"
+	PrepareTraceType  TraceType = "prepare"
+	QueryTraceType    TraceType = "query"
+)
+
 type PGXTracer struct {
+	traceEnabled map[TraceType]bool
 }
 
-// TraceQueryStart is called at the beginning of Query, QueryRow, and Exec calls. The returned context is used for the
-// rest of the call and will be passed to TraceQueryEnd.
-func (t *PGXTracer) TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
-	ctx, seg := xray.BeginSubsegment(ctx, segmentName(conn))
-	seg.AddMetadata("sql", data.SQL)
-	seg.AddMetadata("sql_args", data.Args)
+func (t *PGXTracer) beginSubsegment(ctx context.Context, cfg *pgx.ConnConfig, prefix string) (context.Context, *xray.Segment) {
+	ctx, seg := xray.BeginSubsegment(ctx, t.segmentName(cfg, prefix))
 
-	return context.WithValue(ctx, xraySegmentKey, seg)
+	return context.WithValue(ctx, xraySegmentKey, seg), seg
 }
 
-func (t *PGXTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
+func (t *PGXTracer) segmentName(cfg *pgx.ConnConfig, prefix string) string {
+	return fmt.Sprintf("%s-%s/%s", prefix, cfg.Host, cfg.Database)
+}
+
+func (t *PGXTracer) tryGetSegment(ctx context.Context) *xray.Segment {
 	segRaw := ctx.Value(xraySegmentKey)
 	if segRaw != nil {
 		seg, ok := segRaw.(*xray.Segment)
 		if ok {
-			seg.AddMetadata("sql_rows_affected", data.CommandTag.RowsAffected())
-			seg.Close(data.Err)
+			return seg
 		}
 	}
+
+	return nil
 }
 
-func segmentName(conn *pgx.Conn) string {
-	return fmt.Sprintf("%s/%s", conn.Config().Host, conn.Config().Database)
+func NewPGXTracer(traceTypes ...TraceType) *PGXTracer {
+	traceEnabled := map[TraceType]bool{}
+	if len(traceTypes) == 0 {
+		traceEnabled[BatchTraceType] = true
+		traceEnabled[ConnectTraceType] = true
+		traceEnabled[CopyFromTraceType] = true
+		traceEnabled[PrepareTraceType] = true
+		traceEnabled[QueryTraceType] = true
+	} else {
+		for _, typ := range traceTypes {
+			traceEnabled[typ] = true
+		}
+	}
+
+	return &PGXTracer{
+		traceEnabled: traceEnabled,
+	}
 }
