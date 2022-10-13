@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/aws/aws-xray-sdk-go v1.7.1
-	github.com/jackc/pgx/v5 v5.0.2
+	github.com/jackc/pgx/v5 v5.0.1
 )
 
 require (
