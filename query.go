@@ -11,8 +11,8 @@ func (t *PGXTracer) TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pg
 	if t.traceEnabled[QueryTraceType] {
 		var seg *xray.Segment
 		ctx, seg = t.beginSubsegment(ctx, conn.Config(), "QUERY")
-		seg.AddMetadata("sql", data.SQL)
-		seg.AddMetadata("sql_args", data.Args)
+		addSegmentMetadataString(seg, "sql", data.SQL)
+		addSegmentMetadataArray(seg, "sql_args", data.Args)
 	}
 	return ctx
 }

@@ -12,7 +12,7 @@ func (t *PGXTracer) TracePrepareStart(ctx context.Context, conn *pgx.Conn, data 
 		var seg *xray.Segment
 		ctx, seg = t.beginSubsegment(ctx, conn.Config(), "PREPARE")
 		seg.AddMetadata("sql_name", data.Name)
-		seg.AddMetadata("sql", data.SQL)
+		addSegmentMetadataString(seg, "sql", data.SQL)
 	}
 
 	return ctx

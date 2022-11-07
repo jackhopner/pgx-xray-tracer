@@ -21,8 +21,8 @@ func (t *PGXTracer) TraceBatchQuery(ctx context.Context, conn *pgx.Conn, data pg
 	if t.traceEnabled[BatchTraceType] {
 		seg := t.tryGetSegment(ctx)
 		if seg != nil {
-			seg.AddMetadata("sql", data.SQL)
-			seg.AddMetadata("sql_args", data.Args)
+			addSegmentMetadataString(seg, "sql", data.SQL)
+			addSegmentMetadataArray(seg, "sql_args", data.Args)
 			seg.AddMetadata("sql_rows_affected", data.CommandTag.RowsAffected())
 			seg.Close(data.Err)
 		}
