@@ -8,7 +8,7 @@ import (
 )
 
 func (t *PGXTracer) TraceCopyFromStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceCopyFromStartData) context.Context {
-	if t.traceEnabled[CopyFromTraceType] {
+	if t.traceEnabled[CopyFromTraceType] && t.hasSegment(ctx) {
 		var seg *xray.Segment
 		ctx, seg = t.beginSubsegment(ctx, conn.Config(), "COPY")
 		seg.AddMetadata("sql_column_names", data.ColumnNames)
@@ -18,7 +18,7 @@ func (t *PGXTracer) TraceCopyFromStart(ctx context.Context, conn *pgx.Conn, data
 }
 
 func (t *PGXTracer) TraceCopyFromEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceCopyFromEndData) {
-	if t.traceEnabled[CopyFromTraceType] {
+	if t.traceEnabled[CopyFromTraceType] && t.hasSegment(ctx) {
 		seg := t.tryGetSegment(ctx)
 		if seg != nil {
 			seg.AddMetadata("sql_rows_affected", data.CommandTag.RowsAffected())

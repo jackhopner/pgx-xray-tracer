@@ -8,7 +8,7 @@ import (
 )
 
 func (t *PGXTracer) TracePrepareStart(ctx context.Context, conn *pgx.Conn, data pgx.TracePrepareStartData) context.Context {
-	if t.traceEnabled[PrepareTraceType] {
+	if t.traceEnabled[PrepareTraceType] && t.hasSegment(ctx) {
 		var seg *xray.Segment
 		ctx, seg = t.beginSubsegment(ctx, conn.Config(), "PREPARE")
 		seg.AddMetadata("sql_name", data.Name)
@@ -19,7 +19,7 @@ func (t *PGXTracer) TracePrepareStart(ctx context.Context, conn *pgx.Conn, data 
 }
 
 func (t *PGXTracer) TracePrepareEnd(ctx context.Context, conn *pgx.Conn, data pgx.TracePrepareEndData) {
-	if t.traceEnabled[PrepareTraceType] {
+	if t.traceEnabled[PrepareTraceType] && t.hasSegment(ctx) {
 		seg := t.tryGetSegment(ctx)
 		if seg != nil {
 			seg.AddMetadata("sql_already_prepared", data.AlreadyPrepared)

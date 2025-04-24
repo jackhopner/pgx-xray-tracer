@@ -8,7 +8,7 @@ import (
 )
 
 func (t *PGXTracer) TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryStartData) context.Context {
-	if t.traceEnabled[QueryTraceType] {
+	if t.traceEnabled[QueryTraceType] && t.hasSegment(ctx) {
 		var seg *xray.Segment
 		ctx, seg = t.beginSubsegment(ctx, conn.Config(), "QUERY")
 		addSegmentMetadataString(seg, "sql", data.SQL)
@@ -18,7 +18,7 @@ func (t *PGXTracer) TraceQueryStart(ctx context.Context, conn *pgx.Conn, data pg
 }
 
 func (t *PGXTracer) TraceQueryEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceQueryEndData) {
-	if t.traceEnabled[QueryTraceType] {
+	if t.traceEnabled[QueryTraceType] && t.hasSegment(ctx) {
 		seg := t.tryGetSegment(ctx)
 		if seg != nil {
 			seg.AddMetadata("sql_rows_affected", data.CommandTag.RowsAffected())

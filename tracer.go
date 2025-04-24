@@ -26,6 +26,10 @@ type PGXTracer struct {
 	traceEnabled map[TraceType]bool
 }
 
+func (t *PGXTracer) hasSegment(ctx context.Context) bool {
+	return xray.GetSegment(ctx) != nil
+}
+
 func (t *PGXTracer) beginSubsegment(ctx context.Context, cfg *pgx.ConnConfig, prefix string) (context.Context, *xray.Segment) {
 	ctx, seg := xray.BeginSubsegment(ctx, t.segmentName(cfg, prefix))
 

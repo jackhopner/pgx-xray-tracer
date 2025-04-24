@@ -8,7 +8,7 @@ import (
 )
 
 func (t *PGXTracer) TraceBatchStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceBatchStartData) context.Context {
-	if t.traceEnabled[BatchTraceType] {
+	if t.traceEnabled[BatchTraceType] && t.hasSegment(ctx) {
 		var seg *xray.Segment
 		ctx, seg = t.beginSubsegment(ctx, conn.Config(), "BATCH")
 		seg.AddMetadata("sql_batch_length", data.Batch.Len())
@@ -18,7 +18,7 @@ func (t *PGXTracer) TraceBatchStart(ctx context.Context, conn *pgx.Conn, data pg
 }
 
 func (t *PGXTracer) TraceBatchQuery(ctx context.Context, conn *pgx.Conn, data pgx.TraceBatchQueryData) {
-	if t.traceEnabled[BatchTraceType] {
+	if t.traceEnabled[BatchTraceType] && t.hasSegment(ctx) {
 		seg := t.tryGetSegment(ctx)
 		if seg != nil {
 			addSegmentMetadataString(seg, "sql", data.SQL)
@@ -30,7 +30,7 @@ func (t *PGXTracer) TraceBatchQuery(ctx context.Context, conn *pgx.Conn, data pg
 }
 
 func (t *PGXTracer) TraceBatchEnd(ctx context.Context, conn *pgx.Conn, data pgx.TraceBatchEndData) {
-	if t.traceEnabled[BatchTraceType] {
+	if t.traceEnabled[BatchTraceType] && t.hasSegment(ctx) {
 		seg := t.tryGetSegment(ctx)
 		if seg != nil {
 			seg.Close(data.Err)

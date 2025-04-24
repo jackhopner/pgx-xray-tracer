@@ -7,7 +7,7 @@ import (
 )
 
 func (t *PGXTracer) TraceConnectStart(ctx context.Context, data pgx.TraceConnectStartData) context.Context {
-	if t.traceEnabled[ConnectTraceType] {
+	if t.traceEnabled[ConnectTraceType] && t.hasSegment(ctx) {
 		ctx, _ = t.beginSubsegment(ctx, data.ConnConfig, "CONNECT")
 	}
 
@@ -15,7 +15,7 @@ func (t *PGXTracer) TraceConnectStart(ctx context.Context, data pgx.TraceConnect
 }
 
 func (t *PGXTracer) TraceConnectEnd(ctx context.Context, data pgx.TraceConnectEndData) {
-	if t.traceEnabled[ConnectTraceType] {
+	if t.traceEnabled[ConnectTraceType] && t.hasSegment(ctx) {
 		seg := t.tryGetSegment(ctx)
 		if seg != nil {
 			seg.Close(data.Err)
